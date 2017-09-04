@@ -1,0 +1,1 @@
+This project was inspired by my friends and I watching the NBA, and realizing that we would really love a platform for us to bet fake virtual money on different sports teams, and compete in a group with our friends. We realized that there were no platform for this yet, and decided to create one.
