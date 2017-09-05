@@ -13,11 +13,23 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.Calendar;
+import java.util.TimeZone;
+import yahoofinance.YahooFinance;
 
 import static Connections.Keys.*;
 import static Connections.PreparedStatements.*;
 
-public class DB {
+public class DatabaseConnector {
+
+  private static Connection getConnection(){
+    try {
+      Class.forName("com.mysql.jdbc.Driver").newInstance();
+      return DriverManager.getConnection("jdbc:mysql://" + DB_CONNECTION + "/" + DB_NAME + "?autoReconnect=true&useSSL=false", DB_USER, DB_PASS);
+    } catch (Exception e) {
+      System.out.println(e);
+      return null;
+    }
+  }
 
   //TODO: Make sure to catch integrity constraint
   public static boolean createUser(String name, String email, String password) {
@@ -27,7 +39,7 @@ public class DB {
         PreparedStatement ps = con.prepareStatement(CREATE_USER_INFO);
         ps.setString(1, name);
         ps.setString(2, email);
-        ps.setTimestamp(3, new Timestamp(Calendar.getInstance().getTime().getTime()));
+        ps.setTimestamp(3, new Timestamp(Calendar.getInstance(TimeZone.getTimeZone("Asia/Hong_Kong")).getTime().getTime()));
         String salt = getSalt();
         ps.setString(4, getSecurePassword(password + salt));
         ps.setString(5, salt);
@@ -69,16 +81,6 @@ public class DB {
     return true;
   }
 
-  private static Connection getConnection(){
-    try {
-      Class.forName("com.mysql.jdbc.Driver").newInstance();
-      return DriverManager.getConnection("jdbc:mysql://" + DB_CONNECTION + "/" + DB_NAME + "?autoReconnect=true&useSSL=false", DB_USER, DB_PASS);
-    } catch (Exception e) {
-      System.out.println(e);
-      return null;
-    }
-  }
-
   private static String getSalt() throws NoSuchAlgorithmException {
     SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
     byte[] salt = new byte[16];
@@ -95,6 +97,10 @@ public class DB {
     return new BigInteger(1, md.digest()).toString(16);
   }
 
+  //Gives user (id) with starting amount 1,000,000 USD
+  public static void giveStartingAmount(int id){
+    Connection con = getConnection();
 
+  }
 
 }

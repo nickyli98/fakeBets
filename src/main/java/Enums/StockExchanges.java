@@ -1,4 +1,4 @@
-package Connections;
+package Enums;
 
 public enum StockExchanges {
 
