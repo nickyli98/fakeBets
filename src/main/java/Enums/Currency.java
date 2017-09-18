@@ -167,7 +167,7 @@ public enum Currency {
   CZK("Czech koruna", "Kč", "CZK", "Czech Republic"),
   SCR("Seychellois rupee", "₨", "SCR", "Seychelles");
 
-  public final String[] countries;
+  public final List<String> countries;
   public final String currencyName;
   public final String symbol;
   public final String code;
@@ -179,7 +179,7 @@ public enum Currency {
     this.code = s[2];
     List<String> countries = new ArrayList<>();
     countries.addAll(Arrays.asList(s).subList(3, s.length));
-    this.countries = (String[]) countries.toArray();
+    this.countries = countries;
   }
 
 }

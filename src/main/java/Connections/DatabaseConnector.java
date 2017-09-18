@@ -1,5 +1,7 @@
 package Connections;
 
+import Enums.Currency;
+import Enums.ProductType;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -14,7 +16,6 @@ import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.TimeZone;
-import yahoofinance.YahooFinance;
 
 import static Connections.Keys.*;
 import static Connections.PreparedStatements.*;
@@ -24,7 +25,7 @@ public class DatabaseConnector {
   private static Connection getConnection(){
     try {
       Class.forName("com.mysql.jdbc.Driver").newInstance();
-      return DriverManager.getConnection("jdbc:mysql://" + DB_CONNECTION + "/" + DB_NAME + "?autoReconnect=true&useSSL=false", DB_USER, DB_PASS);
+      return DriverManager.getConnection("jdbc:mysql://" + DB_CONNECTION + "/" + DB_NAME + "?autoReconnect=true&useSSL=false&allowMultiQueries=true", DB_USER, DB_PASS);
     } catch (Exception e) {
       System.out.println(e);
       return null;
@@ -97,10 +98,61 @@ public class DatabaseConnector {
     return new BigInteger(1, md.digest()).toString(16);
   }
 
-  //Gives user (id) with starting amount 1,000,000 USD
-  public static void giveStartingAmount(int id){
-    Connection con = getConnection();
+  public static void addProduct(ProductType type, Currency currency, double amount, int userId, double price)
+      throws SQLException {
+    addProduct(type, currency, amount, userId, "", price);
+  }
 
+  public static void addProduct(ProductType type, Currency currency, double amount, int userId, String descAppend, double price)
+      throws SQLException {
+    Connection con = getConnection();
+    //TODO
+    PreparedStatement ps = con.prepareStatement(PRODUCT_BUY_TRANSACTION);
+    ps.setInt(1, type.dbValue);
+    ps.setDouble(2, amount);
+    ps.setString(3, type.dbValue + descAppend);
+    ps.setInt(4, userId);
+    ps.setString(5, currency.code);
+    ps.setDouble(6, price);
+    ps.executeUpdate();
+    ps.close();
+    con.close();
+  }
+
+  //PRE: User has enough money to buy this product, not for currency
+  public static void updateProduct(int productId, boolean buy, double amount) throws SQLException {
+    Connection con = getConnection();
+    //TODO
+    double price = 1.0;
+    PreparedStatement ps = con.prepareStatement(PRODUCT_UPDATE_TRANSACTION);
+    ps.setInt(1, productId);
+    ps.setDouble(2, buy ? amount : (amount * -1));
+    ps.setDouble(3, price);
+    ps.setInt(4, buy ? 1 : 0);
+    ps.executeUpdate();
+    ps.close();
+    con.close();
+  }
+
+  //Same pre, only for currency
+  public static void updateProduct(int productId, boolean buy, double amount, Currency outputCurrency) throws SQLException{
+    Connection con = getConnection();
+    //TODO
+    double rate = 0.5;
+    PreparedStatement ps = con.prepareStatement(PRODUCT_UPDATE_CURRENCY_TRANSACTION);
+    ps.setInt(1, productId);
+    ps.setDouble(2, buy ? amount : (amount * -1));
+    ps.setInt(3, buy ? 1 : 0);
+    ps.setString(4, outputCurrency.code);
+    ps.setDouble(5, rate);
+    ps.executeUpdate();
+    ps.close();
+    con.close();
+  }
+
+  //Gives user (id) with starting amount 1,000,000 USD
+  public static void giveStartingAmount(int id) throws SQLException {
+    addProduct(ProductType.CURRENCY, Currency.USD, 1000000, id, 0);
   }
 
 }
