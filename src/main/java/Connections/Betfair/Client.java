@@ -1,10 +1,15 @@
 package Connections.Betfair;
 
+import Connections.Betfair.XMLObjects.Event;
 import Connections.Betfair.XMLObjects.EventType;
+import Connections.Betfair.XMLObjects.MarketFilter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -17,14 +22,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 
+import static Connections.Betfair.XMLObjects.JsonUtils.dateParse;
 import static Connections.Keys.*;
 
 public class Client {
 
-  public static void main(String[] args) {
-    for(EventType e : getEventTypes()){
-      System.out.println(e);
-    }
+  public static void main(String[] args) throws ParseException {
+
   }
 
   private static String getSessionToken() throws IOException {
@@ -52,6 +56,57 @@ public class Client {
     return jsonSplit[0].split(":")[1];
   }
 
+  //TODO: See below, updated once a day, store in DB
+  public static List<Event> getEvents(MarketFilter filter) throws ParseException {
+    try {
+      CloseableHttpClient client = HttpClientBuilder.create().build();
+
+      HttpResponse response = getResponse(client, BETFAIR_API_ENDPOINT + "listEvents/", "{\"filter\":" + filter + "}");
+
+      XMLInputFactory factory = XMLInputFactory.newInstance();
+      XMLStreamReader reader = factory.createXMLStreamReader(
+          response.getEntity().getContent());
+      List<Event> list = new ArrayList<>();
+      String tag = null;
+      String country = null;
+      int id = 0;
+      String name = null;
+      String dateS = null;
+      while(reader.hasNext()){
+        int event = reader.next();
+        switch (event) {
+          case XMLStreamConstants.CHARACTERS:
+            tag = reader.getText().trim();
+            break;
+          case XMLStreamConstants.END_ELEMENT:
+            switch(reader.getLocalName()){
+              case "id":
+                id = Integer.parseInt(tag);
+                break;
+              case "countryCode":
+                country = tag;
+              case "name":
+                name = tag;
+                break;
+              case "openDate":
+                dateS = tag;
+                break;
+              case "timezone":
+                Date date = dateParse(dateS, tag);
+                list.add(new Event(id, name, country, tag, date));
+                break;
+            }
+            break;
+        }
+      }
+      return list;
+    } catch (IOException | XMLStreamException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  //TODO: This should only be called once every day or something, stored in DB
   public static List<EventType> getEventTypes(){
     try {
       CloseableHttpClient client = HttpClientBuilder.create().build();
