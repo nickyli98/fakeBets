@@ -28,7 +28,32 @@ import static Connections.Keys.*;
 public class Client {
 
   public static void main(String[] args) throws ParseException {
+    try {
+      CloseableHttpClient client = HttpClientBuilder.create().build();
+      MarketFilter filter = new MarketFilter();
+      HashSet<String> set = new HashSet();
+      set.add("1.134230643");
+      filter.setMarketIds(set);
+      HttpResponse response = getResponse(client, BETFAIR_API_ENDPOINT + "listMarketCatalogue/", "{\"filter\":" + filter + ", \"marketProjection\": [\"RUNNER_DESCRIPTION\"], \"maxResults\": \"10\"}");
 
+      BufferedReader reader  = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+
+      String s;
+      while((s = reader.readLine()) != null){
+      System.out.println(s);
+      }
+
+      System.out.println("---------------------------");
+      client.close();
+      client = HttpClientBuilder.create().build();
+      response = getResponse(client, BETFAIR_API_ENDPOINT + "listRunnerBook/", "{\"marketId\":\"1.134230643\", \"selectionId\": \"48322\", \"priceProjection\":{\"priceData\":[\"EX_BEST_OFFERS\"]}}");
+      reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+      while((s = reader.readLine()) != null){
+        System.out.println(s);
+      }
+    } catch (Exception e){
+      e.printStackTrace();
+    }
   }
 
   private static String getSessionToken() throws IOException {
